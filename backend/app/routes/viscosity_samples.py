@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from app.database import SessionLocal
+from app.events import record_event
 from app.models.mill import Mill
 from app.models.viscosity_sample import ViscositySample
 from app.serializers import viscosity_sample_json
@@ -75,6 +76,13 @@ def create_sample():
         db.add(row)
         db.commit()
         db.refresh(row)
+        mill = db.get(Mill, row.mill_id)
+        record_event(
+            "sample.created",
+            f"新增粘度取样 {mill.mill_code if mill else '#' + str(row.mill_id)}"
+            f" · {row.viscosity_pa_s} Pa·s",
+            row.mill_id,
+        )
         return jsonify(viscosity_sample_json(row)), 201
     finally:
         db.close()
@@ -106,6 +114,13 @@ def update_sample(item_id: int):
         row.notes = str(body.get("notes", "")).strip() or None
         db.commit()
         db.refresh(row)
+        mill = db.get(Mill, row.mill_id)
+        record_event(
+            "sample.updated",
+            f"更新粘度取样 {mill.mill_code if mill else '#' + str(row.mill_id)}"
+            f" · {row.viscosity_pa_s} Pa·s",
+            row.mill_id,
+        )
         return jsonify(viscosity_sample_json(row))
     finally:
         db.close()
@@ -119,8 +134,16 @@ def delete_sample(item_id: int):
         row = db.get(ViscositySample, item_id)
         if not row:
             return error("粘度取样记录不存在", 404)
+        mill_id = row.mill_id
+        mill = db.get(Mill, mill_id)
+        mill_code = mill.mill_code if mill else f"#{mill_id}"
         db.delete(row)
         db.commit()
+        record_event(
+            "sample.deleted",
+            f"删除粘度取样 {mill_code}（记录 #{item_id}）",
+            mill_id,
+        )
         return jsonify({"ok": True})
     finally:
         db.close()

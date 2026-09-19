@@ -50,3 +50,13 @@ export interface DashboardStats {
   samplesLast24h: number;
   passesLast7d: number;
 }
+
+export interface RecentMillEvent {
+  id: number;
+  actorId: number | null;
+  actorName: string | null;
+  action: string;
+  millId: number | null;
+  summary: string;
+  createdAt: string;
+}

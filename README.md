@@ -35,6 +35,14 @@ MySQL 连接：`inkmill` / `inkmill` / `inkmill`（库名/用户/密码）
 3. **ViscositySample**：`millId`, `sampledAt`, `viscosityPaS`（须 &gt; 0，否则 HTTP 400）, `tempC`, `notes`
 4. **GrindPass**：`millId`, `startedAt`, `passNo`（≥ 1）, `durationMin`（&gt; 0）, `mediaType`, `operatorName`
 5. **Dashboard**：`workshopTotal`, `grindingMillCount`, `samplesLast24h`, `passesLast7d`
+6. **RecentMillEvent**（轻量最近事件，非审计后台）：`actorId`, `action`（如 `mill.created` / `sample.updated` / `pass.deleted`）, `millId`, `summary`, `createdAt`
+
+### 最近事件（轻量，不做审计后台）
+
+- 在 **Mill / ViscositySample / GrindPass 的写成功路径**（新增、更新、删除提交后）各**最佳努力**记录一条事件。
+- `GET /api/recent-mill-events` 返回最近 **20** 条：**admin 看全站，grinder 仅看自己**产生的事件。
+- 事件写入使用**独立数据库事务**，与业务主事务完全隔离；写事件失败只记日志并忽略，**不会导致主业务事务失败**。
+- 前端登录后顶栏「最近事件」按钮打开右侧抽屉；点击事件可跳转到对应的研磨机 / 粘度取样 / 研磨遍次页面。
 
 ## 快速启动（Docker）
 
@@ -96,11 +104,11 @@ InkMill-01/
 │   ├── entrypoint.sh
 │   ├── requirements.txt
 │   ├── wsgi.py
-│   └── app/                  # Flask 路由、模型与种子数据
+│   └── app/                  # Flask 路由、模型、events 与种子数据
 └── frontend/
     ├── Dockerfile
     ├── vite.config.ts
-    └── src/routes/           # Login / Dashboard / CRUD 页面
+    └── src/routes/           # Login / Dashboard / CRUD 页面 / RecentEventsDrawer
 ```
 
 ## UI 主题

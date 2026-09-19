@@ -6,10 +6,12 @@
   import Mills from './routes/Mills.svelte';
   import ViscositySamples from './routes/ViscositySamples.svelte';
   import GrindPasses from './routes/GrindPasses.svelte';
+  import RecentEventsDrawer from './routes/RecentEventsDrawer.svelte';
 
   type PageId = 'dashboard' | 'workshops' | 'mills' | 'samples' | 'passes';
 
   let page: PageId = 'dashboard';
+  let eventsOpen = false;
 
   const nav: { id: PageId; label: string }[] = [
     { id: 'dashboard', label: '仪表盘' },
@@ -22,6 +24,11 @@
   function logout() {
     clearSession();
     page = 'dashboard';
+  }
+
+  function onEventNavigate(e: CustomEvent<{ page: 'mills' | 'samples' | 'passes' }>) {
+    page = e.detail.page;
+    eventsOpen = false;
   }
 </script>
 
@@ -51,6 +58,9 @@
       </div>
     </aside>
     <main class="main">
+      <div class="topbar">
+        <button class="events-btn" on:click={() => (eventsOpen = true)}>最近事件</button>
+      </div>
       {#if page === 'dashboard'}
         <Dashboard />
       {:else if page === 'workshops'}
@@ -64,6 +74,12 @@
       {/if}
     </main>
   </div>
+
+  <RecentEventsDrawer
+    bind:open={eventsOpen}
+    on:close={() => (eventsOpen = false)}
+    on:navigate={onEventNavigate}
+  />
 {/if}
 
 <style>
@@ -178,8 +194,28 @@
   }
 
   .main {
-    padding: 1.75rem 2rem 2.5rem;
+    padding: 1.25rem 2rem 2.5rem;
     overflow: auto;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+  }
+
+  .events-btn {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--paper);
+    padding: 0.45rem 0.95rem;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  .events-btn:hover {
+    border-color: var(--vermillion-700);
+    background: rgba(192, 57, 43, 0.12);
   }
 
   @media (max-width: 860px) {

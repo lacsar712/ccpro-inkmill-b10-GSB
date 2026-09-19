@@ -4,6 +4,7 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
 from app.database import SessionLocal
+from app.events import record_event
 from app.models.grind_pass import GrindPass
 from app.models.mill import Mill
 from app.serializers import grind_pass_json
@@ -83,6 +84,13 @@ def create_pass():
         db.add(row)
         db.commit()
         db.refresh(row)
+        mill = db.get(Mill, row.mill_id)
+        record_event(
+            "pass.created",
+            f"新增研磨遍次 {mill.mill_code if mill else '#' + str(row.mill_id)}"
+            f" 第 {row.pass_no} 遍 · {row.operator_name}",
+            row.mill_id,
+        )
         return jsonify(grind_pass_json(row)), 201
     finally:
         db.close()
@@ -110,6 +118,13 @@ def update_pass(item_id: int):
         row.operator_name = str(body["operatorName"]).strip()
         db.commit()
         db.refresh(row)
+        mill = db.get(Mill, row.mill_id)
+        record_event(
+            "pass.updated",
+            f"更新研磨遍次 {mill.mill_code if mill else '#' + str(row.mill_id)}"
+            f" 第 {row.pass_no} 遍 · {row.operator_name}",
+            row.mill_id,
+        )
         return jsonify(grind_pass_json(row))
     finally:
         db.close()
@@ -123,8 +138,17 @@ def delete_pass(item_id: int):
         row = db.get(GrindPass, item_id)
         if not row:
             return error("研磨遍次不存在", 404)
+        mill_id = row.mill_id
+        mill = db.get(Mill, mill_id)
+        mill_code = mill.mill_code if mill else f"#{mill_id}"
+        pass_no = row.pass_no
         db.delete(row)
         db.commit()
+        record_event(
+            "pass.deleted",
+            f"删除研磨遍次 {mill_code} 第 {pass_no} 遍（记录 #{item_id}）",
+            mill_id,
+        )
         return jsonify({"ok": True})
     finally:
         db.close()
