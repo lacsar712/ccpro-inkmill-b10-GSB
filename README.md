@@ -34,7 +34,20 @@ MySQL 连接：`inkmill` / `inkmill` / `inkmill`（库名/用户/密码）
 2. **Mill**：`workshopId`, `millCode`（同车间唯一）, `pigmentBase`, `bowlLiters`, `status`（`grinding` \| `idle` \| `wash`）
 3. **ViscositySample**：`millId`, `sampledAt`, `viscosityPaS`（须 &gt; 0，否则 HTTP 400）, `tempC`, `notes`
 4. **GrindPass**：`millId`, `startedAt`, `passNo`（≥ 1）, `durationMin`（&gt; 0）, `mediaType`, `operatorName`
-5. **Dashboard**：`workshopTotal`, `grindingMillCount`, `samplesLast24h`, `passesLast7d`
+5. **RecentMillEvent**（轻量最近事件）：`actorId`, `action`, `millId`, `summary`, `createdAt`
+6. **Dashboard**：`workshopTotal`, `grindingMillCount`, `samplesLast24h`, `passesLast7d`
+
+## 最近事件（轻量流水，非审计后台）
+
+在研磨机 / 粘度取样 / 研磨遍次的**增改删成功提交后**，各追加一条最近事件。
+
+- `GET /api/recent-mill-events` 返回最近 **20** 条，按时间倒序。
+  - `admin`：全站事件；`grinder`：仅自己触发的事件。
+- 事件为**最佳努力（best-effort）**写入：用独立数据库会话提交，写库失败只记日志、不抛错，
+  **绝不影响主业务事务**（主记录照常成功返回）。因此它不是强一致的审计日志。
+- 删除研磨机时其相关事件保留，`millId` 置空、摘要中保留机台编号。
+- 前端顶栏「最近事件」按钮打开右侧抽屉；点击单条按类型跳转到研磨机 / 粘度取样 / 研磨遍次页。
+- 新表随后端启动 `create_all` 自动创建，无需手工迁移。
 
 ## 快速启动（Docker）
 

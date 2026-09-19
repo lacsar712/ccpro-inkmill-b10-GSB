@@ -6,10 +6,12 @@
   import Mills from './routes/Mills.svelte';
   import ViscositySamples from './routes/ViscositySamples.svelte';
   import GrindPasses from './routes/GrindPasses.svelte';
+  import RecentEventsDrawer from './components/RecentEventsDrawer.svelte';
 
   type PageId = 'dashboard' | 'workshops' | 'mills' | 'samples' | 'passes';
 
   let page: PageId = 'dashboard';
+  let drawerOpen = false;
 
   const nav: { id: PageId; label: string }[] = [
     { id: 'dashboard', label: '仪表盘' },
@@ -22,6 +24,10 @@
   function logout() {
     clearSession();
     page = 'dashboard';
+  }
+
+  function go(target: string) {
+    page = target as PageId;
   }
 </script>
 
@@ -51,19 +57,32 @@
       </div>
     </aside>
     <main class="main">
-      {#if page === 'dashboard'}
-        <Dashboard />
-      {:else if page === 'workshops'}
-        <Workshops />
-      {:else if page === 'mills'}
-        <Mills />
-      {:else if page === 'samples'}
-        <ViscositySamples />
-      {:else}
-        <GrindPasses />
-      {/if}
+      <div class="topbar">
+        <button class="events-btn" on:click={() => (drawerOpen = true)}>
+          <span class="bell-dot"></span>
+          最近事件
+        </button>
+      </div>
+      <div class="page">
+        {#if page === 'dashboard'}
+          <Dashboard />
+        {:else if page === 'workshops'}
+          <Workshops />
+        {:else if page === 'mills'}
+          <Mills />
+        {:else if page === 'samples'}
+          <ViscositySamples />
+        {:else}
+          <GrindPasses />
+        {/if}
+      </div>
     </main>
   </div>
+
+  <RecentEventsDrawer
+    bind:open={drawerOpen}
+    on:navigate={(e) => go(e.detail)}
+  />
 {/if}
 
 <style>
@@ -178,8 +197,40 @@
   }
 
   .main {
-    padding: 1.75rem 2rem 2.5rem;
+    padding: 1.1rem 2rem 2.5rem;
     overflow: auto;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1.1rem;
+  }
+
+  .events-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--line);
+    background: rgba(18, 18, 18, 0.7);
+    color: var(--paper);
+    padding: 0.45rem 0.95rem;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+
+  .events-btn:hover {
+    border-color: var(--vermillion-700);
+    color: white;
+  }
+
+  .bell-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--vermillion-500);
+    box-shadow: 0 0 6px rgba(231, 76, 60, 0.7);
   }
 
   @media (max-width: 860px) {

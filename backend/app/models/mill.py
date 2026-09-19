@@ -27,6 +27,8 @@ class Mill(Base):
 
     workshop: Mapped["Workshop"] = relationship("Workshop", back_populates="mills")
     viscosity_samples: Mapped[list["ViscositySample"]] = relationship(
-        "ViscositySample", back_populates="mill"
+        "ViscositySample", back_populates="mill", passive_deletes=True
     )
-    grind_passes: Mapped[list["GrindPass"]] = relationship("GrindPass", back_populates="mill")
+    grind_passes: Mapped[list["GrindPass"]] = relationship(
+        "GrindPass", back_populates="mill", passive_deletes=True
+    )

@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from app.models.grind_pass import GrindPass
 from app.models.mill import Mill
+from app.models.recent_mill_event import RecentMillEvent
 from app.models.user import User
 from app.models.viscosity_sample import ViscositySample
 from app.models.workshop import Workshop
@@ -63,4 +64,16 @@ def grind_pass_json(row: GrindPass) -> dict:
         "durationMin": _num(row.duration_min) or 0,
         "mediaType": row.media_type,
         "operatorName": row.operator_name,
+    }
+
+
+def recent_mill_event_json(row: RecentMillEvent) -> dict:
+    return {
+        "id": row.id,
+        "actorId": row.actor_id,
+        "actorName": (row.actor.display_name if row.actor else None),
+        "action": row.action,
+        "millId": row.mill_id,
+        "summary": row.summary,
+        "createdAt": dt_to_json(row.created_at),
     }

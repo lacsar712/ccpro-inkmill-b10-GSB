@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
+from app.events import record_event
 from app.models.mill import MILL_STATUSES, Mill
 from app.models.workshop import Workshop
 from app.serializers import mill_json
@@ -75,6 +76,7 @@ def create_mill():
             db.rollback()
             return error("该车间下研磨机编号已存在", 400)
         db.refresh(row)
+        record_event("mill.create", f"新增研磨机 {row.mill_code}（{row.pigment_base}）", row.id)
         return jsonify(mill_json(row)), 201
     finally:
         db.close()
@@ -105,6 +107,7 @@ def update_mill(item_id: int):
             db.rollback()
             return error("该车间下研磨机编号已存在", 400)
         db.refresh(row)
+        record_event("mill.update", f"更新研磨机 {row.mill_code}（状态：{row.status}）", row.id)
         return jsonify(mill_json(row))
     finally:
         db.close()
@@ -118,8 +121,11 @@ def delete_mill(item_id: int):
         row = db.get(Mill, item_id)
         if not row:
             return error("研磨机不存在", 404)
+        mill_code = row.mill_code
         db.delete(row)
         db.commit()
+        # 机台已删除，外键置空，仅在摘要中保留编号
+        record_event("mill.delete", f"删除研磨机 {mill_code}", None)
         return jsonify({"ok": True})
     finally:
         db.close()
